@@ -34,13 +34,35 @@ fn has_gen_access_methods_attr(item: &ItemStruct) -> bool {
         .map(|attr| attr.path.segments.iter())
         .flatten()
         .any(|seg| {
-            eprintln!("token {} container {}",seg.to_token_stream()
-                .to_string(),seg.to_token_stream()
-                .to_string()
-                .contains("generate_access_methods"));
+            eprintln!(
+                "token {} container {}",
+                seg.to_token_stream().to_string(),
+                seg.to_token_stream()
+                    .to_string()
+                    .contains("generate_access_methods_no_cons")
+            );
             seg.to_token_stream()
                 .to_string()
-                .contains("generate_access_methods")
+                .contains("generate_access_methods_no_cons")
+        })
+}
+
+fn has_gen_access_methods_attr_cons(item: &ItemStruct) -> bool {
+    item.attrs
+        .iter()
+        .map(|attr| attr.path.segments.iter())
+        .flatten()
+        .any(|seg| {
+            eprintln!(
+                "token {} container {}",
+                seg.to_token_stream().to_string(),
+                seg.to_token_stream()
+                    .to_string()
+                    .contains("generate_access_methods_cons")
+            );
+            seg.to_token_stream()
+                .to_string()
+                .contains("generate_access_methods_cons")
         })
 }
 
@@ -78,14 +100,12 @@ macro_rules! has_gen_attr {
         let mut is_attribute = false;
         let mut is_constructor = false;
         $expr.attrs.iter().any(|it| {
-            is_attribute = it
-                .path
-                .segments
-                .iter()
-                .any(|it| {
-                eprintln!("hsas atter {}",it.to_token_stream().to_string());
-                it.to_token_stream().to_string().contains("generate_interface")
-                });
+            is_attribute = it.path.segments.iter().any(|it| {
+                eprintln!("hsas atter {}", it.to_token_stream().to_string());
+                it.to_token_stream()
+                    .to_string()
+                    .contains("generate_interface")
+            });
             if is_attribute && $check_for_constructor {
                 is_constructor = it.tokens.to_string().contains("constructor");
             }
@@ -99,10 +119,11 @@ macro_rules! has_gen_attr {
 macro_rules! has_doc_gen_attr {
     ($expr:expr) => {
         $expr.attrs.iter().any(|it| {
-            it.path
-                .segments
-                .iter()
-                .any(|it| it.to_token_stream().to_string().contains("generate_interface_doc"))
+            it.path.segments.iter().any(|it| {
+                it.to_token_stream()
+                    .to_string()
+                    .contains("generate_interface_doc")
+            })
         })
     };
 }
@@ -454,7 +475,11 @@ impl<I: AsRef<Path>, S: AsRef<Path>> FileGenerator<I, S> {
                             }
                         }
                         if has_gen_access_methods_attr(item) {
-                            let impl_block = generate_impl_block(item);
+                            let impl_block = generate_impl_block(item, false);
+                            FileGenerator::<&Path, &Path>::impl_data(&mut file_data, &impl_block);
+                        }
+                        if has_gen_access_methods_attr_cons(item) {
+                            let impl_block = generate_impl_block(item, true);
                             FileGenerator::<&Path, &Path>::impl_data(&mut file_data, &impl_block);
                         }
                     }

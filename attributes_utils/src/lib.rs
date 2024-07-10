@@ -2,7 +2,7 @@ use itertools::MultiUnzip;
 use quote::format_ident;
 use syn::ItemImpl;
 
-pub fn generate_impl_block(item: &syn::ItemStruct) -> ItemImpl {
+pub fn generate_impl_block(item: &syn::ItemStruct, constructor: bool) -> ItemImpl {
     let name = item.clone().ident;
     let vis = item.clone().vis;
     let fields = match item.clone().fields {
@@ -25,8 +25,22 @@ pub fn generate_impl_block(item: &syn::ItemStruct) -> ItemImpl {
             }
         })
         .multiunzip();
+    let constructor_block = if constructor {
+        quote::quote! {
+            #[generate_interface(constructor)]
+            #vis fn new(
+            ) -> #name {
+                #name {
+                    ..Default::default()
+                }
+            }
+        }
+    } else {
+        quote::quote! {}
+    };
     let impl_block = quote::quote! {
          impl #name {
+            #constructor_block
             #(
                 #[generate_interface]
                 pub fn #f_getter(&self) -> #f_ty {
