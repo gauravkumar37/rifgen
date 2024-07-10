@@ -60,7 +60,7 @@ pub fn generate_interface_doc(attr: TokenStream, item: TokenStream) -> TokenStre
 ///
 /// C++ interfaces wouldn't need to implement `Clone`, however, I'm yet to implement that.
 #[proc_macro_attribute]
-pub fn generate_access_methods_gk(_attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn generate_getters(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let ast: syn::Item = syn::parse(item).unwrap();
 
     match ast {
