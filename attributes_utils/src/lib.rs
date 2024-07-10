@@ -10,42 +10,26 @@ pub fn generate_impl_block(item: &syn::ItemStruct) -> ItemImpl {
         _ => unreachable!(),
     };
 
-    let (f_setter, f_getter, f_ident, f_vis, f_ty): (Vec<_>, Vec<_>, Vec<_>, Vec<_>, Vec<_>) =
-        fields
-            .iter()
-            .cloned()
-            .filter_map(|f| {
-                if let Some(ident) = f.ident {
-                    Some((
-                        format_ident!("set_{}", ident),
-                        format_ident!("get_{}", ident),
-                        ident,
-                        f.vis,
-                        f.ty,
-                    ))
+    let (f_getter, f_ident, f_ty): (Vec<_>, Vec<_>, Vec<_>) = fields
+        .iter()
+        .cloned()
+        .filter_map(|f| {
+            if let Some(ident) = f.ident {
+                if let syn::Visibility::Public(_) = f.vis {
+                    Some((format_ident!("{}", ident), ident, f.ty))
                 } else {
                     None
                 }
-            })
-            .multiunzip();
+            } else {
+                None
+            }
+        })
+        .multiunzip();
     let impl_block = quote::quote! {
          impl #name {
-            #[generate_interface(constructor)]
-            #vis fn new(
-                #(#f_ident: #f_ty),*
-            ) -> #name {
-                #name {
-                    #(#f_ident),*
-                }
-            }
             #(
                 #[generate_interface]
-                #f_vis fn #f_setter(&mut self, #f_ident: #f_ty) {
-                    self.#f_ident = #f_ident;
-                }
-
-                #[generate_interface]
-                #f_vis fn #f_getter(&self) -> #f_ty {
+                pub fn #f_getter(&self) -> #f_ty {
                     (&self.#f_ident).clone()
                 }
             )*
